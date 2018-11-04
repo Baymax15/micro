@@ -1,0 +1,17 @@
+# VS Code settings
+.vscode
+
+# Node settings
+node_modules
+
+# Enviornment variables and secrets
+.env
+
+# Pids
+pids
+*.pids
+*.seed
+*.pid.lock
+
+# Eslint settings
+.eslintrc.json
