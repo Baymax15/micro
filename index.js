@@ -52,10 +52,10 @@ client.on('message', async (msg) => {
   if ((msg.channel.type !== 'text' && msg.author.id !== authorId) || msg.author.bot) return;
   let prefix = '!';
 
-  if (!client.notesMap.has(msg.guild.id)) await client.notesMap.set(msg.guild.id, [[msg.author.id, { notes: [], tags: [], afk:'' }]]);
+  if (!client.notesMap.has(msg.guild.id)) await client.notesMap.set(msg.guild.id, [[msg.author.id, { notes: [], tags: [], afk:{ aMsg: '', aTs: null }, points: 0 }]]);
   const users = new Enmap(client.notesMap.get(msg.guild.id));
   if (!users.has(msg.author.id)) {
-    users.set(msg.author.id, { notes: [], tags: [], afk: { aMsg: '', aTs: null } });
+    users.set(msg.author.id, { notes: [], tags: [], afk: { aMsg: '', aTs: null }, points:0 });
     await client.notesMap.set(msg.guild.id, [...users]);
   }
 
@@ -67,7 +67,7 @@ client.on('message', async (msg) => {
     // Afk message setup
     if (msg.mentions.members.size) {
       msg.mentions.members.forEach(async (afkUser) => {
-        if (!users.has(afkUser.id)) users.set(afkUser.id, { notes: [], tags: [], afk: { aMsg: '', aTs: null } });
+        if (!users.has(afkUser.id)) users.set(afkUser.id, { notes: [], tags: [], afk: { aMsg: '', aTs: null }, points: 0 });
         await client.notesMap.set(msg.guild.id, [...users]);
 
         let reply = true;
