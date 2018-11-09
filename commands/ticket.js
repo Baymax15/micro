@@ -105,7 +105,7 @@ please do \`${prefix}ticket [your comment on our service] --REVOKE\` here.`)
           channel.send(`${msg.author}\nIssue : ${msg.cleanContent.split(/ +/g).slice(1).join(' ')}`, TickEmbed).catch(e => log(msg, e));
           if (msg.attachments.size) {
             for (const attach of msg.attachments.values()) {
-              url = attach.url
+              const url = attach.url;
               request({ url, encoding: null }, async function(err, resp, data) {
                 const base64data = Buffer.from(data);
                 channel.send({ files: [new Discord.Attachment(base64data, `${attach.filename}`)] }).catch(e => log(msg, e));

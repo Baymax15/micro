@@ -19,6 +19,7 @@ const token = process.env.TOKEN;
 
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
+const cooldowns = new Discord.Collection();
 client.config = new Enmap({ provider: new EnmapSql({ name: require('./config/dbconfig.json').name, connectionString: process.env.DATABASE_URL }) });
 client.notesMap = new Enmap({ provider: new EnmapSql({ name: require('./config/dbnotes.json').name, connectionString: process.env.DATABASE_URL }) });
 
@@ -113,7 +114,41 @@ client.on('message', async (msg) => {
     } });
   }
   const CommandFile = client.commands.get(MessCmd) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(MessCmd));
-  if (CommandFile) CommandFile.run(msg, MessArgs);
+  if (!CommandFile) return;
+
+  // checking if command (CommandFile) is guildOnly, requires args, etc...
+  if (CommandFile.guildOnly && msg.channel.type !== 'text') return msg.reply('this command doesn\'t run on DMs!');
+  if (CommandFile.argReq && !MessArgs.length) return msg.reply('you didn\'t supply the nessesary arguments!');
+  if (CommandFile.guildOnly && CommandFile.modOnly && !(msg.member.roles.some(r=> client.config.get(msg.guild.id).adminId.includes(r.id)) || msg.author.id === authorId)) return;
+
+  if (!cooldowns.has(CommandFile.name)) {
+    cooldowns.set(CommandFile.name, new Discord.Collection());
+  }
+  /** Cooldown timer Starting */
+  const now = Date.now();
+  const timestamps = cooldowns.get(CommandFile.name);
+  const cooldownAmount = (CommandFile.cooldown || 5) * 1000;
+
+  if (!timestamps.has(msg.author.id)) {
+    timestamps.set(msg.author.id, now);
+    setTimeout(() => timestamps.delete(msg.author.id), cooldownAmount);
+  } else {
+    const expirationTime = timestamps.get(msg.author.id) + cooldownAmount;
+
+    if (now < expirationTime) {
+      const timeLeft = (expirationTime - now) / 1000;
+      return msg.reply(`please wait ${timeLeft.toFixed(1)} more second(s) before reusing the \`${CommandFile.name}\` command.`);
+    }
+    timestamps.set(msg.author.id, now);
+    setTimeout(() => timestamps.delete(msg.author.id), cooldownAmount);
+  }
+  /** Cooldown timer ends. */
+  try {
+    CommandFile.run(msg, MessArgs);
+  } catch(error) {
+    console.log(error);
+    msg.channel.send('An error has occured.');
+  }
   // This runs the command from the command collection
 });
 
